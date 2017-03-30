@@ -1,5 +1,6 @@
 package com.example.user.mtu_size;
 
+import android.app.Activity;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.BroadcastReceiver;
@@ -16,6 +17,7 @@ import android.os.IBinder;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -42,7 +44,8 @@ import static com.example.user.mtu_size.DeviceControlActivity.EXTRAS_DEVICE_ADDR
 import static com.example.user.mtu_size.DeviceControlActivity.EXTRAS_DEVICE_NAME;
 import static com.example.user.mtu_size.R.id.drawecg;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener{
+
+public class MainActivity extends Activity implements View.OnClickListener{
     private LineChart mChart;
     private int time;
     private final static String TAG = DeviceControlActivity.class.getSimpleName();
@@ -61,6 +64,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private final String LIST_NAME = "NAME";
     private final String LIST_UUID = "UUID";
     private boolean dataforNotify = false;      //在displaydata中，需判斷為Notify或Read
+    View layout1, layout2;
 
 
 
@@ -151,21 +155,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             };
     private void clearUI() {
         mGattServicesList.setAdapter((SimpleExpandableListAdapter) null);
-        mDataField.setText(R.string.no_data);
+        //mDataField.setText(R.string.no_data);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        LayoutInflater inflater = LayoutInflater.from(this);
+        layout1 = inflater.inflate(R.layout.activity_main, null);
+        layout2 = inflater.inflate(R.layout.activity_draw, null);
+        setContentView(layout1);
+        //layouttype=1;
+        //setContentView(R.layout.activity_main);
 
         final Intent intent = getIntent();
         mDeviceName = intent.getStringExtra(EXTRAS_DEVICE_NAME);
         mDeviceAddress = intent.getStringExtra(EXTRAS_DEVICE_ADDRESS);
         // Sets up UI references.
         //((TextView) findViewById(R.id.device_address)).setText(mDeviceAddress);
-        mGattServicesList = (ExpandableListView) findViewById(R.id.gatt_services_list);
+        mGattServicesList = (ExpandableListView) findViewById(R.id.gatt_services_list2);
         mGattServicesList.setOnChildClickListener(servicesListClickListner);
         mConnectionState = (TextView) findViewById(R.id.connection_state);
         mDataField = (TextView) findViewById(R.id.data_value);
@@ -342,6 +351,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View v) {
+
+        //Bundle bundle=new Bundle();
+        //bundle.putSerializable("ecg_data",);
+        //intent.putExtras(bundle);
         startActivity(new Intent(this, Main2Activity.class));
     }
 

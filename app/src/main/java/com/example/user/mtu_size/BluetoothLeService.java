@@ -18,6 +18,8 @@ import android.os.IBinder;
 import android.util.Log;
 
 import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -168,8 +170,6 @@ public class BluetoothLeService extends Service {
                     stringBuilder.append(String.format("%02X ", byteChar));
                 }
                 stringBuilder.append("\n");
-
-
                 //寫入file
                 try {
                     FileWriter fw = new FileWriter("/sdcard/output.txt", true);
@@ -430,6 +430,7 @@ public class BluetoothLeService extends Service {
         SimpleDateFormat time4 = new SimpleDateFormat("HH:mm:ss.SSS");
         String T4 = time4.format(t4);
         Log.d("insert date", String.format("Time before insert: " + T4));
+        int sample = 256;
         int Sequence_number = (data[0] & 0xFF);
         int Packet_num = (data[1] & 0xFF);
         int hr = 60 * 60 * 1000 * (data[2] & 0xFF);
@@ -438,9 +439,16 @@ public class BluetoothLeService extends Service {
         int msec = 256 * (data[5] & 0xFF) + (data[6] & 0xFF);
         int totaltime = hr + min + sec + msec;
         if(last_time == 0) last_time = totaltime-1000;
-        double interval = (totaltime - last_time)/256;
+        double interval = (totaltime - last_time) / 256;
         ECG_DATA[] Data_Per_Sec = new ECG_DATA[256];
         JSONArray json_ecg = new JSONArray();
+        JSONObject count = new JSONObject();
+        try {
+            count.put("count",sample);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        json_ecg.put(count);
         for(int i = 0 ;i < 256 ; i++)
         {
             double temp = (data[8+(i*2)] & 0xFF)*256 +(data[8+(i*2)+1]& 0xFF);
@@ -449,6 +457,24 @@ public class BluetoothLeService extends Service {
             double t = last_time + (i * interval) ;
             Data_Per_Sec[i] = new ECG_DATA(0,t,(temp/32768*72.2));
             json_ecg.put(Data_Per_Sec[i].toJsonObject());
+        }
+        Gsensor[] Gsensor_Per_Sec = new Gsensor[10];
+        double ginterval = (totaltime - last_time) / 10;
+        for(int j =0 ; j < 10 ; j++)
+        {
+            Gsensor_Per_Sec[j].setDeviceid(0);
+            Gsensor_Per_Sec[j].setTime(last_time + (j * ginterval));
+            double axis[] = new double[3];
+            for(int u=0;u<3;u++){
+                double t = (data[520+(j*3)+u] & 0xFF);
+                if(t > 127) t = t -256;
+                axis[u] = t*15.6/1000;
+            }
+            Gsensor_Per_Sec[j].getAxis(axis);
+            //Gsensor_Per_Sec[j].setAxis_X((data[520+(j*3)] & 0xFF)*15.6/1000);
+            //Gsensor_Per_Sec[j].setAxis_Y((data[520+(j*3)+1] & 0xFF)*15.6/1000);
+            //Gsensor_Per_Sec[j].setAxis_Z((data[520+(j*3)+2] & 0xFF)*15.6/1000);
+            json_ecg.put(Gsensor_Per_Sec[j].toJsonObject());
         }
         //BackgroundTask backgroundTask=new BackgroundTask(this);
         //backgroundTask.execute(method,json_ecg.toString());
